@@ -356,6 +356,7 @@ let previousHadSeed = false;
 let isRoundRobin = false;
 let rrWins = {};
 let rrLosses = {};
+let rrPoints = {};  // {player: {scored: 0, against: 0}} for three-player only
 let rrMatches = [];
 let matchElements = [];  // 儲存每場 match 的 DOM 元素
 
@@ -471,9 +472,11 @@ function startRoundRobin(players) {
   isRoundRobin = true;
   rrWins = {};
   rrLosses = {};
+  rrPoints = {};
   players.forEach(p => {
     rrWins[p] = 0;
     rrLosses[p] = 0;
+    rrPoints[p] = { scored: 0, against: 0 };
   });
   rrMatches = [
     [players[0], players[1]],
@@ -505,7 +508,7 @@ function startFullRoundRobin(players) {
   nextBtn.style.display = "none";
 }
 
-/* 渲染循環賽 + 戰績表 */
+/* 渲染循環賽 + 比分輸入 + 記分板 */
 function renderRoundRobin(title) {
   app.innerHTML = `<h2>${title}</h2>`;
 
@@ -513,6 +516,24 @@ function renderRoundRobin(title) {
     const m = document.createElement("div");
     m.className = "match";
     m.innerHTML = `<div class="vs">${a} ⚔️ ${b}</div>`;
+    if (mode === "D") {
+      // For full round robin, no score inputs
+    } else {
+      m.innerHTML += `
+        <div class="score-inputs">
+          <div class="score-group">
+            <button class="inc-dec-btn dec-a">-</button>
+            <input type="number" min="0" max="9" data-player="${a}" class="score-a" value="0">
+            <button class="inc-dec-btn inc-a">+</button>
+          </div>
+          <span>:</span>
+          <div class="score-group">
+            <button class="inc-dec-btn dec-b">-</button>
+            <input type="number" min="0" max="9" data-player="${b}" class="score-b" value="0">
+            <button class="inc-dec-btn inc-b">+</button>
+          </div>
+        </div>`;
+    }
     const btns = document.createElement("div");
     btns.className = "buttons";
 
@@ -523,6 +544,26 @@ function renderRoundRobin(title) {
 
     let decided = null;
 
+    function enableInputs() {
+      if (mode === "D") return;
+      m.querySelector('.score-a').disabled = false;
+      m.querySelector('.score-b').disabled = false;
+      m.querySelector('.dec-a').disabled = false;
+      m.querySelector('.inc-a').disabled = false;
+      m.querySelector('.dec-b').disabled = false;
+      m.querySelector('.inc-b').disabled = false;
+    }
+
+    function disableInputs() {
+      if (mode === "D") return;
+      m.querySelector('.score-a').disabled = true;
+      m.querySelector('.score-b').disabled = true;
+      m.querySelector('.dec-a').disabled = true;
+      m.querySelector('.inc-a').disabled = true;
+      m.querySelector('.dec-b').disabled = true;
+      m.querySelector('.inc-b').disabled = true;
+    }
+
     function pickWinner(winnerPlayer, winnerBtn, loserBtn) {
       const loserPlayer = winnerPlayer === a ? b : a;
       if (decided === winnerPlayer) {
@@ -530,9 +571,20 @@ function renderRoundRobin(title) {
         decided = null;
         winnerBtn.classList.remove("win");
         loserBtn.classList.remove("lock");
+        enableInputs();
 
         rrWins[winnerPlayer]--;
         rrLosses[loserPlayer]--;
+        if (mode !== "D") {
+          const scoreA = parseInt(m.querySelector('.score-a').value) || 0;
+          const scoreB = parseInt(m.querySelector('.score-b').value) || 0;
+          const winnerScore = winnerPlayer === a ? scoreA : scoreB;
+          const loserScore = winnerPlayer === a ? scoreB : scoreA;
+          rrPoints[winnerPlayer].scored -= winnerScore;
+          rrPoints[winnerPlayer].against -= loserScore;
+          rrPoints[loserPlayer].scored -= loserScore;
+          rrPoints[loserPlayer].against -= winnerScore;
+        }
 
         updateScoreboard();
         document.getElementById("tie-button-container").innerHTML = '';
@@ -541,12 +593,37 @@ function renderRoundRobin(title) {
 
       if (decided) return;
 
+      if (mode !== "D") {
+        const scoreA = parseInt(m.querySelector('.score-a').value) || 0;
+        const scoreB = parseInt(m.querySelector('.score-b').value) || 0;
+
+        if (scoreA < 0 || scoreB < 0 || scoreA > 9 || scoreB > 9) {
+          alert("分數必須在0到9之間");
+          return;
+        }
+        if ((winnerPlayer === a && scoreA <= scoreB) || (winnerPlayer === b && scoreB <= scoreA)) {
+          alert("勝者分數必須高於輸者");
+          return;
+        }
+      }
+
       decided = winnerPlayer;
       winnerBtn.classList.add("win");
       loserBtn.classList.add("lock");
+      disableInputs();
 
       rrWins[winnerPlayer]++;
       rrLosses[loserPlayer]++;
+      if (mode !== "D") {
+        const scoreA = parseInt(m.querySelector('.score-a').value) || 0;
+        const scoreB = parseInt(m.querySelector('.score-b').value) || 0;
+        const winnerScore = winnerPlayer === a ? scoreA : scoreB;
+        const loserScore = winnerPlayer === a ? scoreB : scoreA;
+        rrPoints[winnerPlayer].scored += winnerScore;
+        rrPoints[winnerPlayer].against += loserScore;
+        rrPoints[loserPlayer].scored += loserScore;
+        rrPoints[loserPlayer].against += winnerScore;
+      }
 
       updateScoreboard();
       checkForCompletion();
@@ -559,6 +636,13 @@ function renderRoundRobin(title) {
     btnA.onclick = () => pickWinner(a, btnA, btnB);
     btnB.onclick = () => pickWinner(b, btnB, btnA);
 
+    if (mode !== "D") {
+      m.querySelector('.inc-a').onclick = () => adjustScore(m.querySelector('.score-a'), 1);
+      m.querySelector('.dec-a').onclick = () => adjustScore(m.querySelector('.score-a'), -1);
+      m.querySelector('.inc-b').onclick = () => adjustScore(m.querySelector('.score-b'), 1);
+      m.querySelector('.dec-b').onclick = () => adjustScore(m.querySelector('.score-b'), -1);
+    }
+
     btns.append(btnA, btnB);
     m.append(btns);
     app.appendChild(m);
@@ -567,16 +651,31 @@ function renderRoundRobin(title) {
 
   const scoreboard = document.createElement("div");
   scoreboard.className = "scoreboard";
+  let tableHeaders = `
+    <th>選手</th>
+    <th>勝場</th>
+    <th>敗場</th>
+    <th>勝率</th>
+    <th>勝敗差距</th>
+  `;
+  if (mode !== "D") {
+    tableHeaders = `
+      <th>選手</th>
+      <th>勝場</th>
+      <th>敗場</th>
+      <th>得分</th>
+      <th>失分</th>
+      <th>得失分差</th>
+      <th>勝率</th>
+      <th>勝敗差距</th>
+    `;
+  }
   scoreboard.innerHTML = `
     <h3>目前戰績</h3>
     <table>
       <thead>
         <tr>
-          <th>選手</th>
-          <th>勝場</th>
-          <th>敗場</th>
-          <th>勝率</th>
-          <th>勝敗差距</th>
+          ${tableHeaders}
         </tr>
       </thead>
       <tbody id="scoreboard-body"></tbody>
@@ -586,6 +685,14 @@ function renderRoundRobin(title) {
   app.appendChild(scoreboard);
 
   updateScoreboard();
+}
+
+/* 調整比分 */
+function adjustScore(input, delta) {
+  if (input.disabled) return;
+  let value = parseInt(input.value) || 0;
+  value = Math.max(0, Math.min(9, value + delta));
+  input.value = value;
 }
 
 /* 更新記分板 */
@@ -601,19 +708,35 @@ function updateScoreboard() {
       const total = wins + losses;
       const winRate = total > 0 ? (wins / total * 100).toFixed(2) + '%' : '0%';
       const diff = wins - losses;
-      return { player, wins, losses, winRate, diff };
+      const scored = mode !== "D" ? rrPoints[player].scored : undefined;
+      const against = mode !== "D" ? rrPoints[player].against : undefined;
+      const scoreDiff = mode !== "D" ? scored - against : undefined;
+      return { player, wins, losses, winRate, diff, scored, against, scoreDiff };
     })
-    .sort((a, b) => b.wins - a.wins || b.diff - a.diff);
+    .sort((a, b) => b.wins - a.wins || (mode !== "D" ? b.scoreDiff - a.scoreDiff : 0) || b.diff - a.diff);
 
   entries.forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+    let trHtml = `
       <td>${item.player}</td>
       <td class="win-count">${item.wins}</td>
       <td>${item.losses}</td>
       <td>${item.winRate}</td>
       <td>${item.diff}</td>
     `;
+    if (mode !== "D") {
+      trHtml = `
+        <td>${item.player}</td>
+        <td class="win-count">${item.wins}</td>
+        <td>${item.losses}</td>
+        <td>${item.scored}</td>
+        <td>${item.against}</td>
+        <td>${item.scoreDiff}</td>
+        <td>${item.winRate}</td>
+        <td>${item.diff}</td>
+      `;
+    }
+    const tr = document.createElement("tr");
+    tr.innerHTML = trHtml;
     tbody.appendChild(tr);
   });
 }
@@ -625,7 +748,7 @@ function checkForCompletion() {
     const container = document.getElementById("tie-button-container");
     container.innerHTML = '';
     const btn = document.createElement("button");
-    btn.textContent = "賽事結束，查看戰績決定冠軍";
+    btn.textContent = "賽事結束，對比戰績決定冠軍";
     btn.style.background = "var(--accent)";
     btn.style.color = "#fff";
     btn.style.padding = "10px 20px";
@@ -633,8 +756,9 @@ function checkForCompletion() {
     btn.onclick = () => {
       const entries = Object.entries(rrWins).map(([player, wins]) => {
         const diff = wins - rrLosses[player];
-        return { player, diff };
-      }).sort((a, b) => b.diff - a.diff);
+        const scoreDiff = mode !== "D" ? rrPoints[player].scored - rrPoints[player].against : 0;
+        return { player, diff, scoreDiff };
+      }).sort((a, b) => b.diff - a.diff || b.scoreDiff - a.scoreDiff);
       const champion = entries[0].player;
       setTimeout(() => showChampion(champion), 400);
     };
@@ -646,22 +770,25 @@ function checkForCompletion() {
 
 /* 檢查三人同為1勝1敗 (僅三強) */
 function checkForTie() {
-  if (mode !== "D" && rrMatches.length !== 3) return;
+  if (mode === "D" || rrMatches.length !== 3) return;
   const allDecided = matchElements.every(m => m.querySelector('.win'));
   const wins = Object.values(rrWins);
   if (allDecided && wins.every(w => w === 1)) {
     const container = document.getElementById("tie-button-container");
-    container.innerHTML = '';
+    container.innerHTML = '<p style="text-align:center; margin-bottom:10px;">三人皆一勝一敗，將進行勝敗比分比賽</p>';
     const btn = document.createElement("button");
-    btn.textContent = "三人戰績相同，隨機決定冠軍";
+    btn.textContent = "三人戰績相同，對比得失分";
     btn.style.background = "var(--accent)";
     btn.style.color = "var(--text)";
     btn.style.padding = "10px 20px";
     btn.style.borderRadius = "999px";
     btn.style.cursor = "pointer";
     btn.onclick = () => {
-      const players = Object.keys(rrWins);
-      const champion = players[Math.floor(Math.random() * players.length)];
+      const entries = Object.entries(rrPoints).map(([player, pts]) => {
+        const diff = pts.scored - pts.against;
+        return { player, diff };
+      }).sort((a, b) => b.diff - a.diff);
+      const champion = entries[0].player;
       setTimeout(() => showChampion(champion), 400);
     };
     container.appendChild(btn);
