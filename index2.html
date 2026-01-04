@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>BEYBLADE X 淘汰賽</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root {
+  --bg: #0b0b0f;
+  --card: #17171f;
+  --accent: #ff3c3c;
+  --win: #3cff8f;
+  --secondary: #4a90e2;
+  --text: #fff;
+  --input-bg: #0e0e14;
+  --border: #333;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  padding: 16px;
+  margin: 0;
+}
+h1 {
+  text-align: center;
+  color: var(--accent);
+  font-size: 28px;
+  margin-bottom: 24px;
+}
+.input-card {
+  background: linear-gradient(180deg, #1a1a24, #12121a);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  margin-bottom: 24px;
+}
+.input-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--accent);
+}
+#playerList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.player-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.player-entry input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 16px;
+}
+.player-entry input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255,60,60,0.3);
+}
+.player-entry button {
+  background: var(--accent);
+  color: var(--text);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.player-entry button:hover {
+  background: #e03030;
+}
+#addPlayer {
+  background: var(--secondary);
+  color: var(--text);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-size: 15px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+#addPlayer:hover {
+  background: #3a80d2;
+}
+.mode-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.mode-btn {
+  flex: 1;
+  background: #555;
+  color: var(--text);
+  border: none;
+  border-radius: 999px;
+  padding: 12px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.mode-btn.active {
+  background: var(--accent);
+}
+.primary {
+  background: var(--accent);
+  color: var(--text);
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 999px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.primary:hover {
+  background: #e03030;
+}
+.round {
+  margin-top: 24px;
+}
+.match {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  transition: transform 0.2s;
+}
+.match:hover {
+  transform: translateY(-2px);
+}
+.vs {
+  text-align: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 16px;
+}
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+.buttons button {
+  flex: 1;
+  background: #222;
+  color: var(--text);
+  border: none;
+  border-radius: 999px;
+  padding: 10px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.buttons button.win {
+  background: var(--win);
+  color: #000;
+}
+.buttons button.lock {
+  background: #555;
+  opacity: .4;
+}
+.seed {
+  text-align: center;
+  color: var(--win);
+  border: 1px solid var(--win);
+  padding: 8px;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+.next {
+  margin-top: 24px;
+  width: 100%;
+  background: var(--accent);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 999px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.next:hover {
+  background: #e03030;
+}
+.life {
+  font-size: 14px;
+  opacity: .7;
+  margin-left: 6px;
+}
+
+/* 記分板樣式 */
+.scoreboard {
+  margin-top: 32px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+.scoreboard h3 {
+  text-align: center;
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  color: var(--accent);
+}
+.scoreboard table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.scoreboard th, .scoreboard td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.scoreboard th {
+  background: #222;
+  font-weight: 600;
+}
+.scoreboard td.win-count {
+  color: var(--win);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* 比分輸入樣式 */
+.score-inputs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.score-inputs input {
+  width: 50px;
+  text-align: center;
+  background: #222;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 16px;
+}
+.score-inputs .inc-dec-btn {
+  background: #333;
+  color: var(--text);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.score-inputs .inc-dec-btn:hover {
+  background: #444;
+}
+.score-inputs .score-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 冠軍動畫 */
+@keyframes popIn {
+  0% { transform: scale(.5); opacity: 0 }
+  70% { transform: scale(1.1); opacity: 1 }
+  100% { transform: scale(1) }
+}
+@keyframes glow {
+  0% { box-shadow: 0 0 10px rgba(255,215,0,.6) }
+  50% { box-shadow: 0 0 30px rgba(255,215,0,1) }
+  100% { box-shadow: 0 0 10px rgba(255,215,0,.6) }
+}
+.champion {
+  margin-top: 40px;
+  background: linear-gradient(135deg, #ffd700, #ff9f00);
+  color: #000;
+  padding: 26px;
+  border-radius: 24px;
+  text-align: center;
+  animation: popIn .6s ease-out, glow 1.6s infinite;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.champion .title {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.champion .name {
+  font-size: 36px;
+  font-weight: 900;
+}
+
+/* 雙敗模式特定樣式 */
+.bracket {
+  margin-top: 24px;
+}
+.bracket h3 {
+  font-size: 18px;
+  color: var(--secondary);
+  margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+<h1>BEYBLADE X 淘汰賽</h1>
+<div class="input-card">
+  <div class="input-title">參賽者名單</div>
+  <div id="playerList"></div>
+  <button id="addPlayer">添加參賽者</button>
+</div>
+<div class="mode-selector">
+  <button id="modeA" class="mode-btn active">單淘汰賽模式</button>
+  <button id="modeB" class="mode-btn">雙條命模式</button>
+  <button id="modeC" class="mode-btn">雙敗淘汰賽模式</button>
+  <button id="modeD" class="mode-btn">循環賽模式</button>
+</div>
+<button class="primary" id="start">產生第一輪</button>
+<div id="app"></div>
+<button id="nextBtn" class="next" style="display:none;">進入下一輪</button>
+
+<script>
+const app = document.getElementById("app");
+const startBtn = document.getElementById("start");
+const nextBtn = document.getElementById("nextBtn");
+const modeA = document.getElementById("modeA");
+const modeB = document.getElementById("modeB");
+const modeC = document.getElementById("modeC");
+const modeD = document.getElementById("modeD");
+const playerList = document.getElementById("playerList");
+const addPlayer = document.getElementById("addPlayer");
+
+let mode = "A";
+let currentPlayers = [];
+let lives = {};
+let round = 1;
+let winners = [];
+let seed = null;
+let previousHadSeed = false;
+
+/* 循環賽狀態 */
+let isRoundRobin = false;
+let rrWins = {};
+let rrLosses = {};
+let rrMatches = [];
+let matchElements = [];  // 儲存每場 match 的 DOM 元素
+
+/* 雙敗模式狀態 */
+let winnersBracket = [];
+let losersBracket = [];
+let doubleElimRound = 1;
+let finalMatch = false;
+let champion = null;
+
+/* 模式切換 */
+function setMode(newMode, btn) {
+  mode = newMode;
+  [modeA, modeB, modeC, modeD].forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+modeA.onclick = () => setMode("A", modeA);
+modeB.onclick = () => setMode("B", modeB);
+modeC.onclick = () => setMode("C", modeC);
+modeD.onclick = () => setMode("D", modeD);
+
+/* 儲存參賽者名單 */
+function savePlayers() {
+  const names = extractNames();
+  localStorage.setItem('beybladePlayers', JSON.stringify(names));
+}
+
+/* 動態添加參賽者 */
+function addPlayerEntry(name = '') {
+  const entry = document.createElement('div');
+  entry.className = 'player-entry';
+  entry.innerHTML = `
+    <input type="text" value="${name}" placeholder="輸入參賽者姓名">
+    <button>-</button>
+  `;
+  const input = entry.querySelector('input');
+  input.addEventListener('input', savePlayers);
+  entry.querySelector('button').onclick = () => {
+    entry.remove();
+    savePlayers();
+  };
+  playerList.appendChild(entry);
+}
+addPlayer.onclick = () => {
+  addPlayerEntry();
+  savePlayers();
+};
+
+function extractNames() {
+  return Array.from(playerList.querySelectorAll('input'))
+    .map(input => input.value.trim())
+    .filter(Boolean);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* 冠軍顯示 */
+function showChampion(name) {
+  app.innerHTML = `
+    <div class="champion">
+      <div class="title">🏆 冠軍誕生 🏆</div>
+      <div class="name">${name}</div>
+    </div>`;
+  nextBtn.style.display = "none";
+}
+
+/* 開始比賽 */
+startBtn.onclick = () => {
+  currentPlayers = extractNames();
+  if (currentPlayers.length < 2) { alert("至少需要2位選手"); return; }
+  savePlayers();  // 開始時儲存
+  winners = [];
+  shuffle(currentPlayers);
+  round = 1;
+  isRoundRobin = false;
+  previousHadSeed = false;
+  if (mode === "B") {
+    lives = {};
+    currentPlayers.forEach(p => lives[p] = 2);
+    renderRound();
+  } else if (mode === "C") {
+    winnersBracket = [...currentPlayers];
+    losersBracket = [];
+    doubleElimRound = 1;
+    finalMatch = false;
+    champion = null;
+    renderDoubleElimRound();
+  } else if (mode === "D") {
+    startFullRoundRobin(currentPlayers);
+  } else {
+    renderRound();
+  }
+  nextBtn.style.display = (mode === "C" || mode === "D") ? "none" : "block";
+};
+
+/* 三強提示 */
+function showRoundRobinNotice(players) {
+  app.innerHTML = `
+    <div class="champion" style="animation:none;background:var(--card);color:var(--text);">
+      ⚠️ 進入三強循環賽<br>
+      <small>先取得 2 勝者為冠軍</small>
+    </div>`;
+  setTimeout(() => startRoundRobin(players), 1200);
+}
+
+/* 啟動三強循環賽 */
+function startRoundRobin(players) {
+  isRoundRobin = true;
+  rrWins = {};
+  rrLosses = {};
+  players.forEach(p => {
+    rrWins[p] = 0;
+    rrLosses[p] = 0;
+  });
+  rrMatches = [
+    [players[0], players[1]],
+    [players[0], players[2]],
+    [players[1], players[2]]
+  ];
+  matchElements = [];
+  renderRoundRobin("三強循環賽");
+  nextBtn.style.display = "none";
+}
+
+/* 啟動完整循環賽 */
+function startFullRoundRobin(players) {
+  isRoundRobin = true;
+  rrWins = {};
+  rrLosses = {};
+  players.forEach(p => {
+    rrWins[p] = 0;
+    rrLosses[p] = 0;
+  });
+  rrMatches = [];
+  for (let i = 0; i < players.length; i++) {
+    for (let j = i + 1; j < players.length; j++) {
+      rrMatches.push([players[i], players[j]]);
+    }
+  }
+  matchElements = [];
+  renderRoundRobin("循環賽");
+  nextBtn.style.display = "none";
+}
+
+/* 渲染循環賽 + 戰績表 */
+function renderRoundRobin(title) {
+  app.innerHTML = `<h2>${title}</h2>`;
+
+  rrMatches.forEach(([a, b]) => {
+    const m = document.createElement("div");
+    m.className = "match";
+    m.innerHTML = `<div class="vs">${a} ⚔️ ${b}</div>`;
+    const btns = document.createElement("div");
+    btns.className = "buttons";
+
+    const btnA = document.createElement("button");
+    const btnB = document.createElement("button");
+    btnA.textContent = a;
+    btnB.textContent = b;
+
+    let decided = null;
+
+    function pickWinner(winnerPlayer, winnerBtn, loserBtn) {
+      const loserPlayer = winnerPlayer === a ? b : a;
+      if (decided === winnerPlayer) {
+        // 反悔
+        decided = null;
+        winnerBtn.classList.remove("win");
+        loserBtn.classList.remove("lock");
+
+        rrWins[winnerPlayer]--;
+        rrLosses[loserPlayer]--;
+
+        updateScoreboard();
+        document.getElementById("tie-button-container").innerHTML = '';
+        return;
+      }
+
+      if (decided) return;
+
+      decided = winnerPlayer;
+      winnerBtn.classList.add("win");
+      loserBtn.classList.add("lock");
+
+      rrWins[winnerPlayer]++;
+      rrLosses[loserPlayer]++;
+
+      updateScoreboard();
+      checkForCompletion();
+
+      if (mode !== "D" && rrWins[winnerPlayer] === 2) {
+        setTimeout(() => showChampion(winnerPlayer), 400);
+      }
+    }
+
+    btnA.onclick = () => pickWinner(a, btnA, btnB);
+    btnB.onclick = () => pickWinner(b, btnB, btnA);
+
+    btns.append(btnA, btnB);
+    m.append(btns);
+    app.appendChild(m);
+    matchElements.push(m);
+  });
+
+  const scoreboard = document.createElement("div");
+  scoreboard.className = "scoreboard";
+  scoreboard.innerHTML = `
+    <h3>目前戰績</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>選手</th>
+          <th>勝場</th>
+          <th>敗場</th>
+          <th>勝率</th>
+          <th>勝敗差距</th>
+        </tr>
+      </thead>
+      <tbody id="scoreboard-body"></tbody>
+    </table>
+    <div id="tie-button-container" style="text-align:center; margin-top:16px;"></div>
+  `;
+  app.appendChild(scoreboard);
+
+  updateScoreboard();
+}
+
+/* 更新記分板 */
+function updateScoreboard() {
+  const tbody = document.getElementById("scoreboard-body");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  const entries = Object.entries(rrWins)
+    .map(([player, wins]) => {
+      const losses = rrLosses[player];
+      const total = wins + losses;
+      const winRate = total > 0 ? (wins / total * 100).toFixed(2) + '%' : '0%';
+      const diff = wins - losses;
+      return { player, wins, losses, winRate, diff };
+    })
+    .sort((a, b) => b.wins - a.wins || b.diff - a.diff);
+
+  entries.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.player}</td>
+      <td class="win-count">${item.wins}</td>
+      <td>${item.losses}</td>
+      <td>${item.winRate}</td>
+      <td>${item.diff}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* 檢查循環賽完成 */
+function checkForCompletion() {
+  const allDecided = matchElements.every(m => m.querySelector('.win'));
+  if (allDecided) {
+    const container = document.getElementById("tie-button-container");
+    container.innerHTML = '';
+    const btn = document.createElement("button");
+    btn.textContent = "賽事結束，查看戰績決定冠軍";
+    btn.style.background = "var(--accent)";
+    btn.style.color = "#fff";
+    btn.style.padding = "10px 20px";
+    btn.style.borderRadius = "999px";
+    btn.onclick = () => {
+      const entries = Object.entries(rrWins).map(([player, wins]) => {
+        const diff = wins - rrLosses[player];
+        return { player, diff };
+      }).sort((a, b) => b.diff - a.diff);
+      const champion = entries[0].player;
+      setTimeout(() => showChampion(champion), 400);
+    };
+    container.appendChild(btn);
+  } else {
+    checkForTie();
+  }
+}
+
+/* 檢查三人同為1勝1敗 (僅三強) */
+function checkForTie() {
+  if (mode !== "D" && rrMatches.length !== 3) return;
+  const allDecided = matchElements.every(m => m.querySelector('.win'));
+  const wins = Object.values(rrWins);
+  if (allDecided && wins.every(w => w === 1)) {
+    const container = document.getElementById("tie-button-container");
+    container.innerHTML = '';
+    const btn = document.createElement("button");
+    btn.textContent = "三人戰績相同，隨機決定冠軍";
+    btn.style.background = "var(--accent)";
+    btn.style.color = "var(--text)";
+    btn.style.padding = "10px 20px";
+    btn.style.borderRadius = "999px";
+    btn.style.cursor = "pointer";
+    btn.onclick = () => {
+      const players = Object.keys(rrWins);
+      const champion = players[Math.floor(Math.random() * players.length)];
+      setTimeout(() => showChampion(champion), 400);
+    };
+    container.appendChild(btn);
+  }
+}
+
+/* 渲染一般淘汰賽 (A/B 模式) */
+function renderRound() {
+  app.innerHTML = "";
+  winners = [];
+  let div = document.createElement("div");
+  div.className = "round";
+  div.innerHTML = `<h2>第 ${round} 輪</h2>`;
+  app.appendChild(div);
+
+  let players = [...currentPlayers];
+  seed = null;
+  if (players.length % 2 === 1) {
+    seed = players.splice(Math.floor(Math.random() * players.length), 1)[0];
+  }
+
+  for (let i = 0; i < players.length; i += 2) {
+    const a = players[i], b = players[i + 1];
+    const m = document.createElement("div");
+    m.className = "match";
+    m.innerHTML = `<div class="vs">
+      ${a}${mode === "B" ? " ❤️".repeat(lives[a] || 0) : ""} ⚔️
+      ${b}${mode === "B" ? " ❤️".repeat(lives[b] || 0) : ""}
+    </div>`;
+    const btns = document.createElement("div");
+    btns.className = "buttons";
+    const btnA = document.createElement("button");
+    const btnB = document.createElement("button");
+    btnA.textContent = a; btnB.textContent = b;
+
+    let decided = null;
+
+    function selectWinner(winner, winBtn, loseBtn) {
+      const loser = winner === a ? b : a;
+      if (decided === winner) {
+        decided = null;
+        winBtn.classList.remove("win");
+        loseBtn.classList.remove("lock");
+        winners = winners.filter(p => p !== winner);
+        if (mode === "B") lives[loser]++;
+        return;
+      }
+      if (decided) return;
+      decided = winner;
+      winBtn.classList.add("win");
+      loseBtn.classList.add("lock");
+      winners.push(winner);
+      if (mode === "B") {
+        lives[loser]--;
+        if (lives[loser] > 0 && !winners.includes(loser)) {
+          winners.push(loser);
+        }
+      }
+    }
+
+    btnA.onclick = () => selectWinner(a, btnA, btnB);
+    btnB.onclick = () => selectWinner(b, btnB, btnA);
+    btns.append(btnA, btnB);
+    m.append(btns);
+    div.appendChild(m);
+  }
+
+  if (seed) {
+    winners.push(seed);
+    const s = document.createElement("div");
+    s.className = "match seed";
+    s.innerHTML = `種子選手：${seed}${mode === "B" ? " ❤️".repeat(lives[seed] || 0) : ""}`;
+    div.appendChild(s);
+  }
+
+  previousHadSeed = !!seed;
+}
+
+/* 下一輪 (A/B 模式) */
+nextBtn.onclick = () => {
+  currentPlayers = winners.filter(p => mode !== "B" || (lives[p] !== undefined && lives[p] > 0));
+  if (currentPlayers.length === 1) {
+    showChampion(currentPlayers[0]);
+    return;
+  }
+  if (mode === "A" && currentPlayers.length === 3 && previousHadSeed) {
+    showRoundRobinNotice(currentPlayers);
+    return;
+  }
+  shuffle(currentPlayers);
+  round++;
+  renderRound();
+};
+
+/* 雙敗淘汰賽渲染 */
+function renderDoubleElimRound() {
+  app.innerHTML = "";
+  let div = document.createElement("div");
+  div.className = "bracket";
+  div.innerHTML = `<h2>第 ${doubleElimRound} 輪 - 雙敗淘汰賽</h2>`;
+  app.appendChild(div);
+
+  // 贏者組
+  const winnersDiv = document.createElement("div");
+  winnersDiv.innerHTML = `<h3>贏者組</h3>`;
+  let newWinnersBracket = [];
+  let newLosers = [];
+  let wbPlayers = [...winnersBracket];
+  shuffle(wbPlayers);
+  for (let i = 0; i < wbPlayers.length; i += 2) {
+    if (i + 1 < wbPlayers.length) {
+      const a = wbPlayers[i], b = wbPlayers[i + 1];
+      const m = createMatch(a, b, (winner, loser) => {
+        newWinnersBracket.push(winner);
+        newLosers.push(loser);
+      });
+      winnersDiv.appendChild(m);
+    } else {
+      // 輪空
+      newWinnersBracket.push(wbPlayers[i]);
+      const s = document.createElement("div");
+      s.className = "match seed";
+      s.innerHTML = `輪空：${wbPlayers[i]}`;
+      winnersDiv.appendChild(s);
+    }
+  }
+  div.appendChild(winnersDiv);
+
+  // 輸者組
+  const losersDiv = document.createElement("div");
+  losersDiv.innerHTML = `<h3>輸者組</h3>`;
+  let newLosersBracket = [];
+  let lbPlayers = [...losersBracket];
+  shuffle(lbPlayers);
+  for (let i = 0; i < lbPlayers.length; i += 2) {
+    if (i + 1 < lbPlayers.length) {
+      const a = lbPlayers[i], b = lbPlayers[i + 1];
+      const m = createMatch(a, b, (winner, loser) => {
+        newLosersBracket.push(winner);
+        // 輸者淘汰，不加回
+      });
+      losersDiv.appendChild(m);
+    } else {
+      // 輪空
+      newLosersBracket.push(lbPlayers[i]);
+      const s = document.createElement("div");
+      s.className = "match seed";
+      s.innerHTML = `輪空：${lbPlayers[i]}`;
+      losersDiv.appendChild(s);
+    }
+  }
+  div.appendChild(losersDiv);
+
+  // 下一輪按鈕 (自訂 for 雙敗)
+  const nextDoubleBtn = document.createElement("button");
+  nextDoubleBtn.className = "next";
+  nextDoubleBtn.textContent = "進入下一輪";
+  nextDoubleBtn.onclick = () => {
+    winnersBracket = newWinnersBracket;
+    losersBracket = [...newLosersBracket, ...newLosers];  // 輸者組加入新輸者
+    if (winnersBracket.length + losersBracket.length < 2) {
+      showChampion(winnersBracket[0] || losersBracket[0]);
+      return;
+    }
+    if (winnersBracket.length === 1 && losersBracket.length === 1) {
+      renderFinalMatch(winnersBracket[0], losersBracket[0]);
+      return;
+    }
+    doubleElimRound++;
+    renderDoubleElimRound();
+  };
+  app.appendChild(nextDoubleBtn);
+}
+
+/* 創建比賽元素 for 雙敗 */
+function createMatch(a, b, onDecide) {
+  const m = document.createElement("div");
+  m.className = "match";
+  m.innerHTML = `<div class="vs">${a} ⚔️ ${b}</div>`;
+  const btns = document.createElement("div");
+  btns.className = "buttons";
+  const btnA = document.createElement("button");
+  const btnB = document.createElement("button");
+  btnA.textContent = a;
+  btnB.textContent = b;
+
+  let decided = null;
+
+  function selectWinner(winner, winBtn, loseBtn, loser) {
+    if (decided === winner) {
+      decided = null;
+      winBtn.classList.remove("win");
+      loseBtn.classList.remove("lock");
+      return;
+    }
+    if (decided) return;
+    decided = winner;
+    winBtn.classList.add("win");
+    loseBtn.classList.add("lock");
+    onDecide(winner, loser);
+  }
+
+  btnA.onclick = () => selectWinner(a, btnA, btnB, b);
+  btnB.onclick = () => selectWinner(b, btnB, btnA, a);
+  btns.append(btnA, btnB);
+  m.append(btns);
+  return m;
+}
+
+/* 最終決賽 for 雙敗 */
+function renderFinalMatch(winnerChamp, loserChamp) {
+  app.innerHTML = "";
+  let div = document.createElement("div");
+  div.className = "round";
+  div.innerHTML = `<h2>最終決賽</h2>`;
+  app.appendChild(div);
+
+  const m = createMatch(winnerChamp, loserChamp, (winner, loser) => {
+    if (winner === winnerChamp) {
+      champion = winnerChamp;
+    } else {
+      // 輸者組贏，需再比一場 (因贏者組只輸一次)
+      finalMatch = true;
+    }
+  });
+  div.appendChild(m);
+
+  const confirmBtn = document.createElement("button");
+  confirmBtn.className = "next";
+  confirmBtn.textContent = "確認結果";
+  confirmBtn.onclick = () => {
+    if (champion) {
+      showChampion(champion);
+    } else if (finalMatch) {
+      renderSecondFinal(winnerChamp, loserChamp);
+    }
+  };
+  app.appendChild(confirmBtn);
+}
+
+/* 第二場決賽 if needed */
+function renderSecondFinal(winnerChamp, loserChamp) {
+  app.innerHTML = "";
+  let div = document.createElement("div");
+  div.className = "round";
+  div.innerHTML = `<h2>第二場決賽 (決定冠軍)</h2>`;
+  app.appendChild(div);
+
+  const m = createMatch(winnerChamp, loserChamp, (winner) => {
+    champion = winner;
+  });
+  div.appendChild(m);
+
+  const confirmBtn = document.createElement("button");
+  confirmBtn.className = "next";
+  confirmBtn.textContent = "確認冠軍";
+  confirmBtn.onclick = () => {
+    if (champion) {
+      showChampion(champion);
+    }
+  };
+  app.appendChild(confirmBtn);
+}
+
+/* 頁面載入時從 localStorage 載入名單 */
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('beybladePlayers');
+  if (saved) {
+    const players = JSON.parse(saved);
+    playerList.innerHTML = '';
+    players.forEach(addPlayerEntry);
+  } else {
+    addPlayerEntry();
+  }
+});
+</script>
+</body>
+</html>
